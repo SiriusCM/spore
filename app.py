@@ -12,6 +12,8 @@ HELP = (
     "  starfish snapshots       查看已有快照列表\n"
     "  starfish rollback [tag]  回滚到指定快照（默认最近一次）\n"
     "  starfish reset           重置 script 为初始版本\n"
+    "  starfish web             启动 Web 界面（浏览器访问）\n"
+    "  starfish desktop         启动桌面小窗应用\n"
     "\n"
     "对话模式中：\n"
     "  直接输入 → 与 AI 对话\n"
@@ -42,6 +44,18 @@ def chat_loop():
 def main():
     from settings import init_data_dir
     init_data_dir()
+
+    if len(sys.argv) > 1 and sys.argv[1] == "web":
+        from core.server import run_server
+        print("🌐 启动 Web 服务: http://localhost:8765")
+        print("   按 Ctrl+C 停止服务")
+        run_server(host="0.0.0.0", port=8765)
+        return
+
+    if len(sys.argv) > 1 and sys.argv[1] == "desktop":
+        from core.desktop import run_desktop
+        print("🖥️ 启动桌面应用...")
+        sys.exit(run_desktop())
 
     if len(sys.argv) > 1 and sys.argv[1] == "evolve":
         from evolver.evolve import evolve

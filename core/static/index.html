@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starfish Agent</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, #e8f5e9 0%, #e3f2fd 50%, #f3e5f5 100%);
+            background-attachment: fixed;
+            overflow: hidden;
+        }
+
+        /* 液态玻璃容器 */
+        .glass {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        /* 头部 */
+        .header {
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-radius: 0 0 24px 24px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 500;
+            color: #2d3436;
+            letter-spacing: 1px;
+        }
+
+        .header h1 span { color: #00b894; }
+
+        .status-dot {
+            width: 8px; height: 8px;
+            background: #00b894;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .header-info {
+            font-size: 12px;
+            color: #636e72;
+        }
+
+        /* 控制面板 */
+        .control-panel {
+            margin: 0 16px;
+            border-radius: 20px;
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .control-panel.expanded { max-height: 320px; }
+
+        .control-inner {
+            padding: 20px;
+        }
+
+        .control-toggle {
+            display: flex;
+            justify-content: center;
+            padding: 8px;
+        }
+
+        .toggle-btn {
+            background: rgba(255,255,255,0.4);
+            border: none;
+            padding: 8px 24px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #636e72;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .toggle-btn:hover {
+            background: rgba(255,255,255,0.7);
+            color: #2d3436;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-evolve { background: linear-gradient(135deg, #00b894, #00cec9); color: white; }
+        .btn-evolve:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,184,148,0.35); }
+
+        .btn-apply { background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: white; }
+        .btn-apply:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(108,92,231,0.35); }
+
+        .btn-snapshot { background: linear-gradient(135deg, #fd79a8, #e84393); color: white; }
+        .btn-snapshot:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(253,121,168,0.35); }
+
+        .btn-rollback { background: linear-gradient(135deg, #fdcb6e, #f39c12); color: white; }
+        .btn-rollback:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(253,203,110,0.35); }
+
+        .btn:disabled { opacity: 0.5; transform: none !important; }
+
+        /* 快照列表 */
+        .snapshot-section { margin-top: 12px; }
+        .snapshot-label { font-size: 12px; color: #636e72; margin-bottom: 8px; }
+
+        .snapshot-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-height: 80px;
+            overflow-y: auto;
+        }
+
+        .snapshot-item {
+            background: rgba(255,255,255,0.5);
+            padding: 6px 14px;
+            border-radius: 10px;
+            font-size: 11px;
+            color: #636e72;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .snapshot-item:hover { background: rgba(255,255,255,0.8); }
+        .snapshot-item.selected { border-color: #00b894; background: rgba(0,184,148,0.1); color: #00b894; }
+
+        /* 聊天区域 */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            max-width: 78%;
+            padding: 14px 18px;
+            border-radius: 18px;
+            line-height: 1.6;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 6px;
+        }
+
+        .message.assistant {
+            background: rgba(255,255,255,0.6);
+            color: #2d3436;
+            align-self: flex-start;
+            border-bottom-left-radius: 6px;
+        }
+
+        .message.error {
+            background: rgba(255,118,117,0.2);
+            border: 1px solid rgba(255,118,117,0.3);
+            color: #d63031;
+        }
+
+        .message.system {
+            background: rgba(253,203,110,0.2);
+            border: 1px solid rgba(253,203,110,0.3);
+            color: #d68910;
+            align-self: center;
+            max-width: 90%;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .time {
+            font-size: 10px;
+            opacity: 0.6;
+            margin-top: 4px;
+            display: block;
+        }
+
+        /* 加载动画 */
+        .loading {
+            align-self: flex-start;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #636e72;
+            font-size: 13px;
+        }
+
+        .loading-dots { display: flex; gap: 4px; }
+        .loading-dots span {
+            width: 6px; height: 6px;
+            background: #00b894;
+            border-radius: 50%;
+            animation: bounce 1.2s infinite ease-in-out;
+        }
+        .loading-dots span:nth-child(1) { animation-delay: -0.24s; }
+        .loading-dots span:nth-child(2) { animation-delay: -0.12s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* 输入区域 */
+        .input-area {
+            padding: 16px 20px 24px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .input-wrapper input {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            background: rgba(255,255,255,0.7);
+            color: #2d3436;
+            transition: all 0.3s;
+        }
+
+        .input-wrapper input:focus {
+            background: rgba(255,255,255,0.95);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .input-wrapper input::placeholder { color: #b2bec3; }
+
+        .send-btn {
+            width: 50px; height: 50px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: scale(1.08);
+            box-shadow: 0 6px 24px rgba(0,184,148,0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 状态消息 */
+        .toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 13px;
+            opacity: 0;
+            transition: all 0.3s;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.success {
+            background: rgba(0,184,148,0.95);
+            color: white;
+        }
+
+        .toast.error {
+            background: rgba(214,48,49,0.95);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header class="header glass">
+        <h1><span>Starfish</span> Agent</h1>
+        <span class="header-info"><span class="status-dot"></span>在线</span>
+    </header>
+
+    <div class="control-toggle">
+        <button class="toggle-btn glass" onclick="togglePanel()">
+            <span id="toggleIcon">&#9660;</span> 控制面板
+        </button>
+    </div>
+
+    <div class="control-panel glass" id="controlPanel">
+        <div class="control-inner">
+            <div class="btn-group">
+                <button class="btn btn-evolve" onclick="doEvolve(false)" id="btn-evolve">&#128260; 预览</button>
+                <button class="btn btn-apply" onclick="doEvolve(true)" id="btn-apply">&#10004; 执行</button>
+                <button class="btn btn-snapshot" onclick="takeSnapshot()">&#128247; 快照</button>
+                <button class="btn btn-rollback" onclick="doRollback()">&#8617; 回滚</button>
+            </div>
+            <div class="snapshot-section">
+                <div class="snapshot-label">选择快照后点击回滚</div>
+                <div class="snapshot-list" id="snapshotList">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-container" id="chatContainer">
+        <div class="message assistant">
+            你好！我是 Starfish Agent，随时为你效劳。
+            <span class="time" id="welcomeTime"></span>
+        </div>
+    </div>
+
+    <div class="input-area">
+        <div class="input-wrapper glass">
+            <input type="text" id="userInput" placeholder="输入消息..." onkeypress="handleKey(event)">
+            <button class="send-btn" onclick="send()" id="sendBtn">&#10148;</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API = 'http://localhost:8765';
+        let selected = '';
+
+        document.getElementById('welcomeTime').textContent = new Date().toLocaleTimeString();
+
+        function togglePanel() {
+            const panel = document.getElementById('controlPanel');
+            const icon = document.getElementById('toggleIcon');
+            panel.classList.toggle('expanded');
+            icon.innerHTML = panel.classList.contains('expanded') ? '&#9650;' : '&#9660;';
+            if (panel.classList.contains('expanded')) loadSnapshots();
+        }
+
+        function toast(msg, err = false) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast show ' + (err ? 'error' : 'success');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        async function loadSnapshots() {
+            try {
+                const d = await (await fetch(`${API}/api/snapshots`)).json();
+                document.getElementById('snapshotList').innerHTML =
+                    d.success && d.snapshots.length
+                        ? d.snapshots.map(s => `<div class="snapshot-item" onclick="selectSnap('${s}',this)">${s}</div>`).join('')
+                        : '<span style="color:#b2bec3">暂无快照</span>';
+            } catch { document.getElementById('snapshotList').innerHTML = '<span style="color:#d63031">加载失败</span>'; }
+        }
+
+        function selectSnap(tag, el) {
+            document.querySelectorAll('.snapshot-item').forEach(i => i.classList.remove('selected'));
+            el.classList.add('selected');
+            selected = tag;
+        }
+
+        async function doEvolve(apply) {
+            const btn = document.getElementById(apply ? 'btn-apply' : 'btn-evolve');
+            btn.disabled = true;
+            toast(apply ? '执行进化中...' : '预览进化中...');
+            try {
+                const d = await (await fetch(`${API}/api/evolve`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({apply})
+                })).json();
+                toast(d.success ? (apply ? '进化已执行' : '预览完成') : '操作失败', !d.success);
+                addMsg('system', apply ? '进化执行完成' : '进化预览完成');
+            } catch (e) { toast('请求失败: ' + e.message, true); }
+            finally { btn.disabled = false; }
+        }
+
+        async function takeSnapshot() {
+            toast('创建快照中...');
+            try {
+                const d = await (await fetch(`${API}/api/snapshot/take`, {method: 'POST'})).json();
+                if (d.success) { toast('快照已创建'); addMsg('system', '快照: ' + d.snapshot); loadSnapshots(); }
+                else toast('创建失败', true);
+            } catch (e) { toast('请求失败', true); }
+        }
+
+        async function doRollback() {
+            if (!selected) { toast('请先选择快照', true); return; }
+            if (!confirm(`确定回滚到 ${selected}？`)) return;
+            toast('回滚中...');
+            try {
+                const d = await (await fetch(`${API}/api/rollback`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({tag: selected})
+                })).json();
+                if (d.success) { toast('回滚成功'); addMsg('system', d.result); selected = ''; loadSnapshots(); }
+                else toast('回滚失败', true);
+            } catch (e) { toast('请求失败', true); }
+        }
+
+        function addMsg(type, content) {
+            const c = document.getElementById('chatContainer');
+            const m = document.createElement('div');
+            m.className = 'message ' + (type === 'user' ? 'user' : type === 'error' ? 'error' : type === 'system' ? 'system' : 'assistant');
+            m.innerHTML = content + `<span class="time">${new Date().toLocaleTimeString()}</span>`;
+            c.appendChild(m);
+            c.scrollTop = c.scrollHeight;
+        }
+
+        async function send() {
+            const input = document.getElementById('userInput');
+            const btn = document.getElementById('sendBtn');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            addMsg('user', msg);
+            input.value = '';
+            btn.disabled = true;
+
+            const loading = document.createElement('div');
+            loading.className = 'loading';
+            loading.innerHTML = '思考中 <div class="loading-dots"><span></span><span></span><span></span></div>';
+            document.getElementById('chatContainer').appendChild(loading);
+            document.getElementById('chatContainer').scrollTop = 1e9;
+
+            try {
+                const d = await (await fetch(`${API}/api/chat`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message: msg})
+                })).json();
+                loading.remove();
+                if (d.success) addMsg('assistant', d.response);
+                else addMsg('error', d.detail || '请求失败');
+            } catch (e) {
+                loading.remove();
+                addMsg('error', '连接失败，请确保服务已启动');
+            } finally { btn.disabled = false; input.focus(); }
+        }
+
+        function handleKey(e) { if (e.key === 'Enter') send(); }
+    </script>
+</body>
+</html>
