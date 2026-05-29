@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "starfish-agent"
-version = "0.1.7"
+version = "0.2.0"
 description = "可自我进化的智能助手"
 readme = "README.md"
 license = {text = "MIT"}
@@ -48,4 +48,5 @@ where = ["."]
 
 [tool.setuptools.package-data]
 "*" = ["script/*.py", "CONSTITUTION.md"]
+"core" = ["static/*"]
 "config" = ["env", "env.dev"]
