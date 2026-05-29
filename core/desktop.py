@@ -31,7 +31,7 @@ class StarfishWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Starfish Agent")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 600, 800)
 
         # 创建 WebView
         self.browser = QWebEngineView()

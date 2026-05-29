@@ -9,7 +9,7 @@ from flask_cors import CORS
 from core.orchestrator import run as chat_run
 from evolver.evolve import evolve
 from evolver.snapshot import take_snapshot, list_snapshots, rollback
-from settings import DATA_DIR, init_data_dir
+from settings import DATA_DIR, init_data_dir, _user_env
 
 # 初始化数据目录
 init_data_dir()
@@ -99,6 +99,50 @@ def api_rollback():
 def health_check():
     """健康检查"""
     return jsonify({"status": "ok"})
+
+
+@app.route('/api/settings', methods=['GET'])
+def get_settings():
+    """获取当前 LLM 设置"""
+    from settings import LLM_MODEL, LLM_BASE_URL, LLM_API_KEY
+    return jsonify({
+        "success": True,
+        "settings": {
+            "model": LLM_MODEL,
+            "base_url": LLM_BASE_URL,
+            "api_key": LLM_API_KEY
+        }
+    })
+
+
+@app.route('/api/settings', methods=['POST'])
+def save_settings():
+    """保存 LLM 设置到环境变量文件"""
+    data = request.get_json() or {}
+    model = data.get('model', '')
+    base_url = data.get('base_url', '')
+    api_key = data.get('api_key', '')
+
+    try:
+        # 写入用户目录下的 env 文件
+        lines = []
+        if model:
+            lines.append(f"LLM_MODEL={model}")
+        if base_url:
+            lines.append(f"LLM_BASE_URL={base_url}")
+        if api_key:
+            lines.append(f"LLM_API_KEY={api_key}")
+
+        with open(_user_env, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(lines) + '\n')
+
+        # 重新加载环境变量
+        from dotenv import load_dotenv
+        load_dotenv(_user_env, override=True)
+
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "detail": f"Save settings error: {str(e)}"}), 500
 
 
 def run_server(host: str = "127.0.0.1", port: int = 8765):
