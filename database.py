@@ -105,6 +105,24 @@ def init_db():
             description TEXT DEFAULT '',
             created_at TEXT NOT NULL
         );
+
+        -- Skill 配置（用户可在 UI 增删改启停）
+        -- name        : 唯一名称，作为 [SKILL]name[/SKILL] 的标识
+        -- summary     : 简短一句话描述，给 planner 看，用于决定是否激活
+        -- triggers    : 触发关键词（逗号分隔），辅助 planner 匹配
+        -- content     : 激活时注入到 executor prompt 的完整内容（Markdown）
+        -- domains     : 适用领域（JSON 数组），便于按 agent 范围过滤
+        CREATE TABLE IF NOT EXISTS skills (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            summary TEXT NOT NULL DEFAULT '',
+            triggers TEXT DEFAULT '',
+            content TEXT NOT NULL DEFAULT '',
+            domains TEXT NOT NULL DEFAULT '["*"]',
+            enabled INTEGER DEFAULT 1,
+            hit_count INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL
+        );
     """)
 
     # 插入默认配置

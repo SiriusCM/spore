@@ -13,6 +13,7 @@
         <div style="display:flex;align-items:center;gap:12px;">
             <button class="settings-btn" onclick="openSettings()" title="设置">&#9881;</button>
             <button class="settings-btn" onclick="openMcp()" title="MCP 服务端">&#128268;</button>
+            <button class="settings-btn" onclick="openSkill()" title="Skill 配置">&#127919;</button>
             <span class="header-info"><span class="status-dot"></span>在线</span>
         </div>
     </header>
@@ -145,7 +146,64 @@
         </div>
     </div>
 
+    <!-- Skill 配置弹窗 -->
+    <div class="modal-overlay" id="skillModal" onclick="closeSkillOnOverlay(event)">
+        <div class="modal" onclick="event.stopPropagation()" style="max-width:760px;">
+            <div class="modal-header">
+                <div class="modal-title">Skill 配置</div>
+                <button class="modal-close" onclick="closeSkill()">&times;</button>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+                <button class="modal-btn modal-btn-primary" onclick="showSkillForm()">+ 新增</button>
+                <button class="modal-btn modal-btn-secondary" onclick="document.getElementById('skillImportFile').click()">导入 ZIP</button>
+                <label style="display:flex;align-items:center;gap:4px;color:#666;font-size:12px;">
+                    <input type="checkbox" id="skillImportOverwrite"> 同名覆盖
+                </label>
+                <input type="file" id="skillImportFile" accept=".zip" style="display:none;" onchange="importSkill(this)">
+                <span style="color:#888;font-size:12px;align-self:center;">Skill 是按需激活的"任务剧本"，命中后会被注入到执行者的 prompt 中</span>
+            </div>
+
+            <div id="skillList" style="max-height:300px;overflow:auto;border:1px solid #eee;border-radius:8px;padding:8px;">
+                加载中...
+            </div>
+
+            <div id="skillForm" style="display:none;margin-top:12px;border-top:1px solid #eee;padding-top:12px;">
+                <input type="hidden" id="skillFormId" value="">
+                <div class="form-group">
+                    <label>名称（唯一，英文/数字/下划线，AI 用它激活）</label>
+                    <input type="text" id="skillName" placeholder="例如: weekly_report">
+                </div>
+                <div class="form-group">
+                    <label>简介（一句话，planner 用它判断是否激活）</label>
+                    <input type="text" id="skillSummary" placeholder="例如: 生成本周工作周报">
+                </div>
+                <div class="form-group">
+                    <label>触发关键词（可选，逗号分隔）</label>
+                    <input type="text" id="skillTriggers" placeholder="例如: 周报,周总结,本周">
+                </div>
+                <div class="form-group">
+                    <label>适用领域（JSON 数组，* 表示全部）</label>
+                    <input type="text" id="skillDomains" placeholder='例如: ["*"] 或 ["编程","写作"]'>
+                </div>
+                <div class="form-group">
+                    <label>正文（激活时注入到执行者 prompt 的完整内容，支持 Markdown）</label>
+                    <textarea id="skillContent" rows="8" placeholder="例如：&#10;1. 先用 mysql_exec 查 last_week 表&#10;2. 按【方向/进展/计划】三段式总结&#10;3. 输出 Markdown 表格"></textarea>
+                </div>
+                <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+                    <label style="margin:0;">启用</label>
+                    <input type="checkbox" id="skillEnabled" checked>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-secondary" onclick="cancelSkillForm()">取消</button>
+                    <button class="modal-btn modal-btn-primary" onclick="saveSkill()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="/static/app.js"></script>
 </body>
+</html>
 </html>
 </html>

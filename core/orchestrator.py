@@ -6,7 +6,7 @@ from settings import LLM_MODEL, LLM_BASE_URL, LLM_API_KEY, SCRIPT_DIR
 from .chat_log import append_history, write_chat_log, write_evolve_hint, history_context
 from .user_profile import rules_context
 from .agent_registry import list_agents, route, record_hit
-from . import mcp_client, mcp_registry
+from . import mcp_client, mcp_registry, skill_registry
 
 
 # (mtime, module) cache —— 文件未变则复用已加载模块，避免重复 exec
@@ -40,6 +40,7 @@ def _load_script(name):
 
 _HINT_RE = re.compile(r'\[EVOLVE_HINT\](.*?)\[/EVOLVE_HINT\]', re.DOTALL)
 _DOMAIN_RE = re.compile(r'\[DOMAIN\](.*?)\[/DOMAIN\]', re.DOTALL)
+_SKILL_RE = re.compile(r'\[SKILL\](.*?)\[/SKILL\]', re.DOTALL)
 
 _llm = None
 
@@ -126,25 +127,82 @@ def _build_executor(agent_def: dict) -> Agent:
     return agent
 
 
+def _format_plan_template(P, **kwargs) -> str:
+    """兼容老/新 prompts.py：新模板包含 skill_section 占位，老模板没有。"""
+    template = P.PLAN_TASK_TEMPLATE
+    if "{skill_section}" not in template:
+        kwargs.pop("skill_section", None)
+    return template.format(**kwargs)
+
+
+def _format_exec_template(P, **kwargs) -> str:
+    """兼容老/新 prompts.py：新模板包含 skill_content/skill_obey 占位。"""
+    template = P.EXEC_TASK_TEMPLATE
+    if "{skill_content}" not in template:
+        kwargs.pop("skill_content", None)
+    if "{skill_obey}" not in template:
+        kwargs.pop("skill_obey", None)
+    return template.format(**kwargs)
+
+
+def _build_skill_section(agent_id: str) -> str:
+    """给 planner 看的 Skill 列表块；为空时返回空串。"""
+    body = skill_registry.render_for_planner(agent_id)
+    if not body:
+        return ""
+    return (
+        "【可用 Skill 列表】\n"
+        + body
+        + "\n（若任务确实匹配某个 Skill，请通过 [SKILL]name[/SKILL] 激活；不匹配则保持 [SKILL][/SKILL] 空标签）\n\n"
+    )
+
+
+def _resolve_skill_content(plan_result: str, agent_id: str) -> tuple[str, list[str]]:
+    """从 planner 输出中提取 [SKILL]...[/SKILL]，返回 (拼接好的注入文本, 激活名列表)。"""
+    m = _SKILL_RE.search(plan_result)
+    if not m:
+        return "", []
+    names = [n.strip() for n in m.group(1).split(",") if n.strip()]
+    if not names:
+        return "", []
+    blocks: list[str] = []
+    activated: list[str] = []
+    for name in names:
+        sk = skill_registry.get_by_name(name)
+        if not sk:
+            continue
+        domains = sk.get("domains") or ["*"]
+        if agent_id and agent_id not in domains and "*" not in domains:
+            continue
+        blocks.append(f"## Skill：{sk['name']}\n{sk.get('content', '').strip()}")
+        activated.append(sk["name"])
+        skill_registry.record_hit(sk["name"])
+    if not blocks:
+        return "", []
+    body = "\n\n".join(blocks)
+    return f"【已激活的 Skill —— 必须严格遵循其指引完成本次任务】\n{body}\n\n", activated
+
+
 def run(user_input: str) -> str:
     P = _load_script("prompts")
     ctx = history_context()
-    global_rules = rules_context()  # planner 阶段只用全局规则
+    global_rules = rules_context()
     agent_list = _build_agent_list()
+    skill_section = _build_skill_section("")  # planner 阶段还不知道 agent，先列全部
 
     planner = _get_planner()
 
     plan_task = Task(
-        description=P.PLAN_TASK_TEMPLATE.format(
+        description=_format_plan_template(
+            P,
             user_rules=global_rules, history_context=ctx,
             user_input=user_input, tool_catalog=P.TOOL_CATALOG,
-            agent_list=agent_list,
+            agent_list=agent_list, skill_section=skill_section,
         ),
         expected_output=P.PLAN_TASK_EXPECTED,
         agent=planner,
     )
 
-    # 第一阶段：让 planner 运行，拿到领域标签
     plan_crew = Crew(
         agents=[planner], tasks=[plan_task],
         process=Process.sequential, verbose=False, tracing=False,
@@ -158,18 +216,23 @@ def run(user_input: str) -> str:
     # 路由到对应智能体
     agent_def = route(domain)
     executor = _build_executor(agent_def)
-
-    # 记录命中
     record_hit(domain, agent_def["id"])
+
+    # 解析 Skill 激活
+    skill_content, activated = _resolve_skill_content(plan_result, agent_def["id"])
+    skill_obey = "，并严格遵循上方激活的 Skill 指引" if activated else ""
 
     # executor 阶段合并全局规则 + 智能体专属规则
     merged_rules = rules_context(agent_def["id"])
 
     exec_task = Task(
-        description=P.EXEC_TASK_TEMPLATE.format(
+        description=_format_exec_template(
+            P,
             user_rules=merged_rules, user_input=user_input,
             agent_name=agent_def.get("name", "通用助手"),
             domain=domain,
+            skill_content=skill_content,
+            skill_obey=skill_obey,
         ),
         expected_output=P.EXEC_TASK_EXPECTED,
         agent=executor,
@@ -184,7 +247,6 @@ def run(user_input: str) -> str:
     try:
         result = exec_crew.kickoff()
         raw = str(result)
-        # 拆分：提取摘要，剩余部分作为用户可见回答
         hint_match = _HINT_RE.search(raw)
         if hint_match:
             hint = hint_match.group(1).strip()
@@ -198,8 +260,4 @@ def run(user_input: str) -> str:
     except Exception as e:
         err = f"执行出错：{type(e).__name__}: {e}"
         write_chat_log(user_input, err, error=True)
-        raise_chat_log(user_input, err, error=True)
-        raise f"执行出错：{type(e).__name__}: {e}"
-        write_chat_log(user_input, err, error=True)
-        raise_chat_log(user_input, err, error=True)
         raise

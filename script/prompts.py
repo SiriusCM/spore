@@ -23,24 +23,29 @@ TOOL_CATALOG = (
 PLAN_TASK_TEMPLATE = (
     "{user_rules}{history_context}"
     "【可用智能体列表】\n{agent_list}\n\n"
+    "{skill_section}"
     "用户最新指令：'{user_input}'。\n"
     "{tool_catalog}\n"
-    "请完成两件事：\n"
+    "请完成三件事：\n"
     "1. 在第一行输出领域标签，格式：[DOMAIN]标签[/DOMAIN]。"
     "标签必须从上方智能体列表的 domains 中选择，若都不匹配则写 general。"
     "标签为简短中文词（如：编程、生活、地理、美食），不要写句子。\n"
-    "2. 若属于闲聊/自我介绍/通用问答，请输出：1. 直接回答用户问题（无需工具）。\n"
+    "2. 在第二行输出激活的 Skill 名称（可多个，英文逗号分隔），格式：[SKILL]name1,name2[/SKILL]。"
+    "若无可用 Skill 列表或当前任务不需要 Skill，则写 [SKILL][/SKILL]（保留空标签）。"
+    "只能从上方提供的 Skill 列表中选择名称，不要自创。\n"
+    "3. 若属于闲聊/自我介绍/通用问答，请输出：1. 直接回答用户问题（无需工具）。\n"
     "   否则输出一个简短的编号步骤计划，明确每步调用哪个工具。"
 )
-PLAN_TASK_EXPECTED = "第一行为 [DOMAIN]...[/DOMAIN]，后续为编号步骤计划或直接回答说明。"
+PLAN_TASK_EXPECTED = "第一行 [DOMAIN]...[/DOMAIN]，第二行 [SKILL]...[/SKILL]，后续为编号步骤计划或直接回答说明。"
 
 # ── executor（动态，role/goal/backstory 从 agents.json 填充）─
 EXEC_TASK_TEMPLATE = (
     "{user_rules}你是「{agent_name}」。\n"
+    "{skill_content}"
     "用户最新指令：'{user_input}'。\n"
     "根据上一步规划师产出的步骤计划：若计划标注无需工具，直接给出最终中文回答；\n"
     "否则依次调用工具完成操作并汇总结果。\n"
-    "回答时必须严格遵守上方的用户个性化规则。\n\n"
+    "回答时必须严格遵守上方的用户个性化规则{skill_obey}。\n\n"
     "【重要】回答完毕后，你必须在最末尾另起一行追加一段进化摘要，格式如下：\n"
     "[EVOLVE_HINT]领域：{domain}; 用户意图：...; 是否纠正：是/否; "
     "纠正内容：...; 偏好信号：...; 回答质量自评：优/良/差[/EVOLVE_HINT]\n"

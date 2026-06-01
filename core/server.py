@@ -3,7 +3,7 @@ Starfish HTTP Server - Flask 接口服务
 提供问答、进化、快照等 RESTful API
 """
 import os
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
 
 from core.orchestrator import run as chat_run
@@ -146,7 +146,7 @@ def save_settings():
 
 
 # ── MCP 服务端管理 ──────────────────────────────────────
-from core import mcp_registry, mcp_client
+from core import mcp_registry, mcp_client, skill_registry
 
 
 @app.route('/api/mcp/servers', methods=['GET'])
@@ -223,6 +223,88 @@ def api_mcp_tools():
         })
     except Exception as e:
         return jsonify({"success": False, "detail": f"Tools error: {e}"}), 500
+
+
+# ── Skill 管理 ─────────────────────────────────────────
+@app.route('/api/skills', methods=['GET'])
+def api_skill_list():
+    """列出所有 skill"""
+    try:
+        return jsonify({"success": True, "skills": skill_registry.list_skills()})
+    except Exception as e:
+        return jsonify({"success": False, "detail": f"List error: {e}"}), 500
+
+
+@app.route('/api/skills', methods=['POST'])
+def api_skill_add():
+    """新增 skill"""
+    data = request.get_json() or {}
+    try:
+        sid = skill_registry.add_skill(data)
+        return jsonify({"success": True, "id": sid})
+    except Exception as e:
+        return jsonify({"success": False, "detail": f"Add error: {e}"}), 400
+
+
+@app.route('/api/skills/<int:sid>', methods=['PUT'])
+def api_skill_update(sid: int):
+    data = request.get_json() or {}
+    try:
+        ok = skill_registry.update_skill(sid, data)
+        return jsonify({"success": ok})
+    except Exception as e:
+        return jsonify({"success": False, "detail": f"Update error: {e}"}), 400
+
+
+@app.route('/api/skills/<int:sid>', methods=['DELETE'])
+def api_skill_delete(sid: int):
+    try:
+        ok = skill_registry.delete_skill(sid)
+        return jsonify({"success": ok})
+    except Exception as e:
+        return jsonify({"success": False, "detail": f"Delete error: {e}"}), 500
+
+
+@app.route('/api/skills/<int:sid>/toggle', methods=['POST'])
+def api_skill_toggle(sid: int):
+    data = request.get_json() or {}
+    enabled = bool(data.get("enabled", True))
+    try:
+        ok = skill_registry.set_enabled(sid, enabled)
+        return jsonify({"success": ok})
+    except Exception as e:
+        return jsonify({"success": False, "detail": f"Toggle error: {e}"}), 500
+
+
+@app.route('/api/skills/<int:sid>/export', methods=['GET'])
+def api_skill_export(sid: int):
+    """下载某个 skill 的 zip 包"""
+    try:
+        filename, payload = skill_registry.export_skill_zip(sid)
+        return Response(
+            payload,
+            mimetype="application/zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Content-Length": str(len(payload)),
+            },
+        )
+    except Exception as e:
+        return jsonify({"success": False, "detail": f"Export error: {e}"}), 400
+
+
+@app.route('/api/skills/import', methods=['POST'])
+def api_skill_import():
+    """上传 skill zip 包导入。可选 form 字段 overwrite=1 表示覆盖同名。"""
+    if "file" not in request.files:
+        return jsonify({"success": False, "detail": "缺少 file 字段"}), 400
+    f = request.files["file"]
+    overwrite = (request.form.get("overwrite") or "").lower() in ("1", "true", "yes")
+    try:
+        result = skill_registry.import_skill_zip(f.read(), overwrite=overwrite)
+        return jsonify({"success": True, **result})
+    except Exception as e:
+        return jsonify({"success": False, "detail": f"Import error: {e}"}), 400
 
 
 def run_server(host: str = "127.0.0.1", port: int = 8765):

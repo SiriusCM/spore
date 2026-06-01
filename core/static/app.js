@@ -341,3 +341,146 @@ async function loadMcpTools() {
         document.getElementById('mcpTools').textContent = '网络错误';
     }
 }
+
+// ── Skill 配置 ───────────────────────────────────────────
+function openSkill() {
+    document.getElementById('skillModal').classList.add('show');
+    cancelSkillForm();
+    loadSkillList();
+}
+function closeSkill() { document.getElementById('skillModal').classList.remove('show'); }
+function closeSkillOnOverlay(e) {
+    if (e.target === document.getElementById('skillModal')) closeSkill();
+}
+
+async function loadSkillList() {
+    try {
+        const d = await (await fetch(`${API}/api/skills`)).json();
+        const list = document.getElementById('skillList');
+        if (!d.success) { list.innerHTML = '<span style="color:#d63031">加载失败</span>'; return; }
+        if (!d.skills.length) { list.innerHTML = '<span style="color:#888">暂无 Skill，点击 + 新增</span>'; return; }
+        list.innerHTML = d.skills.map(s => `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:8px;border-bottom:1px solid #f0f0f0;">
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:500;">${s.name} <span style="color:${s.enabled?'#27ae60':'#999'};font-size:12px;">[${s.enabled?'启用':'禁用'}]</span> <span style="color:#888;font-size:12px;">命中 ${s.hit_count||0}</span></div>
+                    <div style="color:#666;font-size:13px;">${s.summary||''}</div>
+                    <div style="color:#aaa;font-size:12px;">domains: ${JSON.stringify(s.domains||['*'])}${s.triggers?` · triggers: ${s.triggers}`:''}</div>
+                </div>
+                <div style="display:flex;gap:4px;flex-shrink:0;">
+                    <button class="modal-btn modal-btn-secondary" onclick='toggleSkill(${s.id}, ${!s.enabled})'>${s.enabled?'禁用':'启用'}</button>
+                    <button class="modal-btn modal-btn-secondary" onclick='editSkill(${JSON.stringify(s).replace(/'/g, "&#39;")})'>编辑</button>
+                    <button class="modal-btn modal-btn-secondary" onclick='exportSkill(${s.id})'>导出</button>
+                    <button class="modal-btn modal-btn-secondary" onclick='deleteSkill(${s.id})' style="color:#d63031;">删除</button>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        document.getElementById('skillList').innerHTML = '<span style="color:#d63031">网络错误</span>';
+    }
+}
+
+function showSkillForm() {
+    document.getElementById('skillForm').style.display = 'block';
+    document.getElementById('skillFormId').value = '';
+    document.getElementById('skillName').value = '';
+    document.getElementById('skillSummary').value = '';
+    document.getElementById('skillTriggers').value = '';
+    document.getElementById('skillDomains').value = '["*"]';
+    document.getElementById('skillContent').value = '';
+    document.getElementById('skillEnabled').checked = true;
+}
+function cancelSkillForm() { document.getElementById('skillForm').style.display = 'none'; }
+
+function editSkill(s) {
+    document.getElementById('skillForm').style.display = 'block';
+    document.getElementById('skillFormId').value = s.id;
+    document.getElementById('skillName').value = s.name || '';
+    document.getElementById('skillSummary').value = s.summary || '';
+    document.getElementById('skillTriggers').value = s.triggers || '';
+    document.getElementById('skillDomains').value = JSON.stringify(s.domains || ['*']);
+    document.getElementById('skillContent').value = s.content || '';
+    document.getElementById('skillEnabled').checked = !!s.enabled;
+}
+
+async function saveSkill() {
+    let domains;
+    try { domains = JSON.parse(document.getElementById('skillDomains').value || '["*"]'); }
+    catch { toast('domains 必须是合法 JSON 数组', true); return; }
+
+    const body = {
+        name: document.getElementById('skillName').value.trim(),
+        summary: document.getElementById('skillSummary').value.trim(),
+        triggers: document.getElementById('skillTriggers').value.trim(),
+        content: document.getElementById('skillContent').value,
+        domains,
+        enabled: document.getElementById('skillEnabled').checked ? 1 : 0,
+    };
+    if (!body.name) { toast('name 不能为空', true); return; }
+    if (!body.summary) { toast('summary 不能为空（planner 需要它判断）', true); return; }
+    if (!body.content.trim()) { toast('content 不能为空', true); return; }
+
+    const id = document.getElementById('skillFormId').value;
+    const url = id ? `${API}/api/skills/${id}` : `${API}/api/skills`;
+    const method = id ? 'PUT' : 'POST';
+    try {
+        const d = await (await fetch(url, {
+            method, headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body),
+        })).json();
+        if (d.success) { toast('已保存'); cancelSkillForm(); loadSkillList(); }
+        else toast(d.detail || '保存失败', true);
+    } catch (e) { toast('保存失败: ' + e.message, true); }
+}
+
+async function toggleSkill(id, enabled) {
+    try {
+        const d = await (await fetch(`${API}/api/skills/${id}/toggle`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({enabled}),
+        })).json();
+        if (d.success) { loadSkillList(); }
+        else toast(d.detail || '失败', true);
+    } catch (e) { toast('失败: ' + e.message, true); }
+}
+
+async function deleteSkill(id) {
+    if (!confirm('确定删除该 Skill？')) return;
+    try {
+        const d = await (await fetch(`${API}/api/skills/${id}`, {method: 'DELETE'})).json();
+        if (d.success) { toast('已删除'); loadSkillList(); }
+        else toast(d.detail || '失败', true);
+    } catch (e) { toast('失败: ' + e.message, true); }
+}
+
+function exportSkill(id) {
+    // 直接让浏览器跳到导出 URL，触发下载
+    const a = document.createElement('a');
+    a.href = `${API}/api/skills/${id}/export`;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+async function importSkill(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const overwrite = document.getElementById('skillImportOverwrite').checked;
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('overwrite', overwrite ? '1' : '0');
+    try {
+        const r = await fetch(`${API}/api/skills/import`, {method: 'POST', body: fd});
+        const d = await r.json();
+        if (d.success) {
+            toast(d.action === 'created' ? `已导入: ${d.name}` : `已覆盖: ${d.name}`);
+            loadSkillList();
+        } else {
+            toast(d.detail || '导入失败', true);
+        }
+    } catch (e) {
+        toast('导入失败: ' + e.message, true);
+    } finally {
+        input.value = '';  // 允许重复选同一个文件
+    }
+}
