@@ -9,20 +9,20 @@ from flask_cors import CORS
 from core.orchestrator import run as chat_run
 from evolver.evolve import evolve
 from evolver.snapshot import take_snapshot, list_snapshots, rollback
-from settings import DATA_DIR, init_data_dir, _user_env
+from settings import init_data_dir, _user_env
 
 # 初始化数据目录
 init_data_dir()
 
 # 静态资源目录：
-# - WEB_DIST：Vite 构建产物（前端 SPA），由 `cd core/vue && npm install && npm run build` 生成
+# - WEB_DIST：Vite 构建产物（前端 SPA），由 `cd vue && npm install && npm run build` 生成
 # - LEGACY_STATIC：保留给 PyQt 等非前端资源（如 icon.png）
 WEB_DIST = os.path.join(os.path.dirname(__file__), "vue", "dist")
-LEGACY_STATIC = os.path.join(os.path.dirname(__file__), "static")
+LEGACY_STATIC = os.path.join(os.path.dirname(__file__), "assets")
 os.makedirs(LEGACY_STATIC, exist_ok=True)
 
 # 创建 Flask 应用：静态目录指向 Vite dist
-app = Flask(__name__, static_folder=WEB_DIST, static_url_path='/static')
+app = Flask(__name__, static_folder=WEB_DIST, static_url_path='/')
 CORS(app)  # 允许跨域
 
 # 兼容旧引用
@@ -36,7 +36,7 @@ def root():
     if not os.path.exists(index_path):
         return (
             "<h2>前端尚未构建</h2>"
-            "<p>请先在 <code>core/vue/</code> 目录执行：</p>"
+            "<p>请先在 <code>vue/</code> 目录执行：</p>"
             "<pre>npm install\nnpm run build</pre>",
             503,
         )
@@ -166,8 +166,8 @@ def save_settings():
 
 
 # ── MCP 服务端管理 ──────────────────────────────────────
-from core import mcp_registry, mcp_client, skill_registry, prompt_registry
-from core import agent_registry as agent_reg
+from core import mcp_client
+from registry import mcp_registry, prompt_registry, skill_registry, agent_registry as agent_reg
 
 
 @app.route('/api/mcp/servers', methods=['GET'])

@@ -4,7 +4,7 @@
 """
 from datetime import datetime
 from database import get_conn
-from .agent_registry import get_agent_rules
+from registry.agent_registry import get_agent_rules
 
 
 def load_rules() -> list[str]:

@@ -32,7 +32,7 @@ except ImportError as e:
 
 from crewai.tools import BaseTool
 
-from . import mcp_registry
+from registry import mcp_registry
 
 
 # ── 后台事件循环线程 ──────────────────────────────────────

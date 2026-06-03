@@ -35,7 +35,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-org/starfish-agent"
+Homepage = "https://github.com/SiriusCM/starfish"
 
 [project.scripts]
 starfish = "app:main"
@@ -45,9 +45,10 @@ py-modules = ["app", "settings", "database"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-exclude = ["mcp_servers_standalone*", "mcp_servers*", "tests*", "dist*", "build*", "core.vue*"]
+exclude = ["mcp_servers_standalone*", "mcp_servers*", "tests*", "dist*", "build*"]
 
 [tool.setuptools.package-data]
 "*" = ["script/*.py", "CONSTITUTION.md"]
-"core" = ["static/icon.png", "vue/dist/index.html", "vue/dist/assets/*"]
+"core" = ["static/icon.png"]
+"vue" = ["index.html", "package.json", "vite.config.js", "src/**/*", "public/**/*"]
 "config" = ["env", "env.dev"]

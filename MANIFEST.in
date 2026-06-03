@@ -7,11 +7,8 @@ recursive-include script *.py
 recursive-include core *.py
 recursive-include evolver *.py
 
-# 前端资源
+# 前端资源（vue 源码 + 已构建产物）
 include core/static/icon.png
-include core/vue/dist/index.html
-recursive-include core/vue/dist/assets *
-
-# 排除前端源码与开发依赖
-prune core/vue/node_modules
-exclude core/vue/package-lock.json
+recursive-include vue *
+prune vue/node_modules
+exclude vue/package-lock.json

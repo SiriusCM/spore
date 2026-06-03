@@ -49,7 +49,7 @@ def main():
         return
 
     if len(sys.argv) > 1 and sys.argv[1] == "web":
-        from core.server import run_server
+        from server import run_server
         print("🌐 启动 Web 服务: http://localhost:8765")
         print("   按 Ctrl+C 停止服务")
         run_server(host="0.0.0.0", port=8765)
@@ -78,7 +78,7 @@ def main():
         return
 
     # 默认启动桌面版
-    from core.desktop import run_desktop
+    from desktop import run_desktop
     print("🖥️ 启动桌面应用...")
     sys.exit(run_desktop())
 

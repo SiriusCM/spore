@@ -5,9 +5,9 @@ from crewai import Agent, Task, Crew, Process, LLM
 from settings import LLM_MODEL, LLM_BASE_URL, LLM_API_KEY, SCRIPT_DIR
 from .chat_log import append_history, write_chat_log, write_evolve_hint, history_context
 from .user_profile import rules_context
-from .agent_registry import list_agents, route, record_hit, current_version as agent_version
-from . import mcp_client, mcp_registry, skill_registry, prompt_registry
-
+from registry.agent_registry import list_agents, route, record_hit, current_version as agent_version
+from . import mcp_client
+from registry import mcp_registry, prompt_registry, skill_registry
 
 # (mtime, module) cache —— 文件未变则复用已加载模块，避免重复 exec
 _SCRIPT_CACHE: dict = {}

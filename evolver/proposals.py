@@ -1,6 +1,5 @@
 import os
 import json
-from datetime import datetime
 from crewai.tools import tool
 from settings import SCRIPT_DIR
 
@@ -196,7 +195,7 @@ def propose_create_tool(payload: str) -> str:
 def read_user_rules(_: str = "") -> str:
     """读取当前已学到的用户规则列表（全局+各智能体专属）。无需输入参数。"""
     from core.user_profile import load_rules
-    from core.agent_registry import list_agents, get_agent_rules
+    from registry.agent_registry import list_agents, get_agent_rules
     lines = []
     global_rules = load_rules()
     if global_rules:
@@ -216,7 +215,7 @@ def read_user_rules(_: str = "") -> str:
 @tool("read_agents")
 def read_agents(_: str = "") -> str:
     """读取当前已注册的智能体列表和领域统计数据。无需输入参数。用于判断是否需要裂变。"""
-    from core.agent_registry import list_agents, get_domain_stats, get_split_threshold
+    from registry.agent_registry import list_agents, get_domain_stats, get_split_threshold
     agents = list_agents()
     stats = get_domain_stats()
     threshold = get_split_threshold()
@@ -319,7 +318,7 @@ def propose_create_skill(payload: str) -> str:
 def read_skills(_: str = "") -> str:
     """读取当前已注册的 Skill 列表（含命中次数）。无需输入参数。
     用于判断某领域是否已有覆盖的 skill，避免重复创建。"""
-    from core.skill_registry import list_skills
+    from registry.skill_registry import list_skills
     items = list_skills(only_enabled=False)
     if not items:
         return "(暂无 Skill)"

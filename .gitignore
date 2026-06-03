@@ -5,11 +5,11 @@ build/
 dist/
 
 # 前端构建相关
-/core/vue/node_modules/
-/core/vue/dist/
-/core/vue/.vite/
-/core/vue/npm-debug.log*
-/core/vue/yarn-debug.log*
-/core/vue/yarn-error.log*
+/vue/node_modules/
+/vue/dist/
+/vue/.vite/
+/vue/npm-debug.log*
+/vue/yarn-debug.log*
+/vue/yarn-error.log*
 
 .DS_Store

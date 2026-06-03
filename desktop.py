@@ -26,7 +26,7 @@ from PyQt6.QtCore import QUrl, pyqtSignal, QObject
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtGui import QIcon
 
-from core.server import app as flask_app
+from server import app as flask_app
 from settings import PKG_DIR
 
 
@@ -84,7 +84,7 @@ def run_desktop():
     app.setApplicationName("Starfish Agent")
 
     # 设置应用图标
-    icon_path = os.path.join(PKG_DIR, "core", "static", "icon.png")
+    icon_path = os.path.join(PKG_DIR, "assets", "icon.png")
     if os.path.exists(icon_path):
         app_icon = QIcon(icon_path)
         app.setWindowIcon(app_icon)

@@ -5,11 +5,10 @@ import vue from '@vitejs/plugin-vue'
 // dist/ 已加入 .gitignore，开发者克隆代码后需先 `npm install && npm run build`。
 export default defineConfig({
     plugins: [vue()],
-    base: '/static/',
+    base: './',
     build: {
         outDir: 'dist',
         emptyOutDir: true,
-        assetsDir: 'assets',
     },
     server: {
         port: 5173,

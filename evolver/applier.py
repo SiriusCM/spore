@@ -1,16 +1,14 @@
 import os
-import json
 import ast
-import shutil
 import subprocess
 from datetime import datetime
-from .snapshot import take_snapshot, rollback, list_snapshots
+from .snapshot import take_snapshot, rollback
 from settings import SCRIPT_DIR, AGENT_BASE_DIR
 
 
 def _apply_split_agents(split_proposals):
     """将裂变提案写入数据库。"""
-    from core.agent_registry import add_agent
+    from registry.agent_registry import add_agent
     for p in split_proposals:
         add_agent({
             "id": p["id"],
@@ -26,7 +24,7 @@ def _apply_split_agents(split_proposals):
 
 def _apply_create_skills(skill_proposals):
     """将 create_skill 提案写入 skills 表（重名时更新）。"""
-    from core.skill_registry import add_skill, update_skill, get_by_name
+    from registry.skill_registry import add_skill, update_skill
     from database import get_conn
     for p in skill_proposals:
         data = {
@@ -48,7 +46,7 @@ def _apply_create_skills(skill_proposals):
 
 def _apply_rule_updates(rule_proposals):
     from core.user_profile import save_rule, remove_rule
-    from core.agent_registry import add_agent_rule, remove_agent_rule
+    from registry.agent_registry import add_agent_rule, remove_agent_rule
 
     for p in rule_proposals:
         agent_id = p.get("agent_id", "")
