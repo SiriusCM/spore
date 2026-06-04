@@ -16,15 +16,13 @@ export const api = {
     }),
     chatHistory: () => jsonFetch('/api/chat/history'),
 
-    // 进化 / 快照
+    // 进化
     evolve: (apply) => jsonFetch('/api/evolve', {
         method: 'POST', body: JSON.stringify({ apply }),
     }),
-    snapshots: () => jsonFetch('/api/snapshots'),
-    takeSnapshot: () => jsonFetch('/api/snapshot/take', { method: 'POST' }),
-    rollback: (tag) => jsonFetch('/api/rollback', {
-        method: 'POST', body: JSON.stringify({ tag }),
-    }),
+    evolveReports: () => jsonFetch('/api/evolve/reports'),
+    evolveLatestReport: () => jsonFetch('/api/evolve/reports/latest'),
+    evolveReport: (id) => jsonFetch(`/api/evolve/reports/${id}`),
 
     // 设置
     getSettings: () => jsonFetch('/api/settings'),
@@ -67,7 +65,6 @@ export const api = {
     agentToggle: (id, enabled) => jsonFetch(`/api/agents/${id}/toggle`, {
         method: 'POST', body: JSON.stringify({ enabled }),
     }),
-
 
     tools: () => jsonFetch('/api/tools'),
     toolsBuiltin: () => jsonFetch('/api/tools/builtin'),

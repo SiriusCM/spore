@@ -1,7 +1,7 @@
 include CONSTITUTION.md
 include README.md
 include LICENSE
-include assets/icon.png
+include config/icon.png
 include config/env
 recursive-include script *.py
 recursive-include core *.py

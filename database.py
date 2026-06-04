@@ -127,6 +127,21 @@ def init_db():
             source TEXT NOT NULL DEFAULT '',
             updated_at TEXT NOT NULL
         );
+
+        -- 进化报告记录
+        -- state: preview(预览/未应用) | applied(已应用) | failed(失败/已回滚)
+        CREATE TABLE IF NOT EXISTS evolve_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TEXT NOT NULL,
+            state TEXT NOT NULL DEFAULT 'preview',
+            proposals_count INTEGER DEFAULT 0,
+            applied_count INTEGER DEFAULT 0,
+            failed_count INTEGER DEFAULT 0,
+            snapshot_tag TEXT,
+            phase TEXT NOT NULL,
+            result_msg TEXT,
+            report_content TEXT NOT NULL
+        );
     """)
 
     # 插入默认配置

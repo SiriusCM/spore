@@ -74,25 +74,6 @@ body {
 .control-inner { padding: 20px; }
 .control-toggle { display: flex; justify-content: center; padding: 8px; }
 
-.snapshot-section { margin-top: 12px; }
-.snapshot-label { font-size: 12px; color: #636e72; margin-bottom: 8px; }
-.snapshot-list {
-    display: flex; flex-wrap: wrap; gap: 8px;
-    max-height: 80px; overflow-y: auto;
-}
-.snapshot-item {
-    background: rgba(255,255,255,0.5);
-    padding: 6px 14px;
-    border-radius: 10px;
-    font-size: 11px;
-    color: #636e72;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: 1px solid transparent;
-}
-.snapshot-item:hover { background: rgba(255,255,255,0.8); }
-.snapshot-item.selected { border-color: #00b894; background: rgba(0,184,148,0.1); color: #00b894; }
-
 /* 聊天区域 */
 .chat-container {
     flex: 1;

@@ -158,11 +158,42 @@ def evolve(dry_run: bool = True) -> dict:
         print(f"   说明 : {decision.get('msg')}")
     if dry_run and n > 0:
         print("👉 确认无误后执行：starfish evolve --apply")
+
+    # 保存报告到数据库
+    from database import get_conn
+    conn = get_conn()
+    # 确定状态：preview=预览/未应用, applied=已应用, failed=失败
+    if dry_run:
+        state = "preview"
+    elif decision.get("rolled_back"):
+        state = "failed"
+    else:
+        state = "applied"
+    conn.execute(
+        """INSERT INTO evolve_reports
+           (created_at, state, proposals_count, applied_count, failed_count, snapshot_tag, phase, result_msg, report_content)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (
+            datetime.now().isoformat(),
+            state,
+            n,
+            applied,
+            failed,
+            decision.get("snapshot"),
+            decision.get("phase", ""),
+            decision.get("msg", ""),
+            md,
+        )
+    )
+    conn.commit()
+    conn.close()
+
     return {
         "report": md,
         "proposals": n,
         "applied": applied,
         "failed": failed,
+        "state": state,
         "applied_to_disk": decision.get("applied_to_disk", False),
         "snapshot": decision.get("snapshot"),
         "msg": decision.get("msg", ""),

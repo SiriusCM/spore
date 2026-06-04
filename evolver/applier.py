@@ -2,7 +2,7 @@ import os
 import ast
 import subprocess
 from datetime import datetime
-from .snapshot import take_snapshot, rollback
+from .snapshot import take_snapshot, _rollback
 from settings import SCRIPT_DIR, AGENT_BASE_DIR
 from core.registry import tool_catalog_registry
 
@@ -233,7 +233,7 @@ def apply_proposals(proposals, dry_run: bool):
 
     ok, msg = _import_smoke(base_dir)
     if not ok:
-        rollback(os.path.basename(snap))
+        _rollback()
         return results, {"phase": "smoke", "ok": False, "msg": msg, "applied_to_disk": False, "snapshot": os.path.basename(snap), "rolled_back": True}
 
     return results, {"phase": "applied", "ok": True, "msg": msg, "applied_to_disk": True, "snapshot": os.path.basename(snap), "rolled_back": False}

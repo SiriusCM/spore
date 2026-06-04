@@ -1,4 +1,4 @@
-"""提示词模板。planner 固定，executor 从 agents.json 动态填充。"""
+"""提示词模板。planner 固定，executor 从 SQLite 数据库（agents 表）动态填充。"""
 
 # ── planner（固定，负责判定领域 + 规划步骤）──────────────
 PLANNER_ROLE = "任务规划师"

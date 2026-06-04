@@ -9,7 +9,7 @@ EVOLVER_GOAL = (
 EVOLVER_BACKSTORY = (
     "你是 Agent 的进化引擎。你不能直接修改文件，必须通过 propose_add_rule / "
     "propose_remove_rule / propose_edit / propose_create_tool / propose_create_skill / propose_split_agent 提交提案，由框架统一应用。"
-    "你不可改自己（evolver/*）、config.py、app.py。"
+    "你只能修改 script/ 目录下的 Python 文件。"
     "你必须遵守 CONSTITUTION.md 中的全部条目，任何与其冲突的修改都不要提交。"
 )
 
@@ -73,7 +73,7 @@ EVOLVER_TASK_TEMPLATE = """请完成 Agent 自我进化。
 - 同一次进化优先级：add_rule > create_skill > edit > create_tool > split_agent。
 - 不得让 Agent 取得超出工具范围的能力。
 - 不得削弱 CONSTITUTION.md 的安全红线。
-- 不得修改 evolver/*、config.py、app.py。
+- 只能修改 script/ 目录下的 Python 文件，不得修改其他任何目录。
 - 输出语言：中文。
 """
 

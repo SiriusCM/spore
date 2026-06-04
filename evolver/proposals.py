@@ -3,8 +3,8 @@ import json
 from crewai.tools import tool
 from settings import SCRIPT_DIR
 
-WRITABLE_FILES = {"prompts.py", "tools.py"}
-PROTECTED_FILES = set()
+# evolver 可修改的目录：仅限 script/ 下的 Python 文件
+PROTECTED_FILES = set()  # 由 CONSTITUTION.md 统一保护
 
 _proposals = []
 
@@ -65,18 +65,20 @@ def read_all_log(_: str = "") -> str:
 def propose_edit(payload: str) -> str:
     """提交一条修改提案（不立即写盘，由框架统一应用）。
     payload 为 JSON 字符串，结构：
-    {"file": "prompts.py | orchestrator.py | chat_log.py | tools.py", "old": "原文片段（必须在文件中精确存在）", "new": "替换为", "reason": "为何这么改"}
-    file 不允许是 CONSTITUTION.md（受保护）。
+    {"file": "纯文件名（如 prompts.py）", "old": "原文片段（必须在文件中精确存在）", "new": "替换为", "reason": "为何这么改"}
+    约束：file 必须是 script/ 目录下存在的 .py 文件（由 CONSTITUTION.md 统一保护其他目录）。
     """
     try:
         data = json.loads(payload)
     except Exception as e:
         return f"失败：payload 非合法 JSON：{e}"
     f = (data.get("file") or "").strip()
-    if f not in WRITABLE_FILES:
-        return f"失败：file 必须是 {sorted(WRITABLE_FILES - PROTECTED_FILES)} 之一，收到 {f!r}"
-    if f in PROTECTED_FILES:
-        return f"失败：{f} 是受保护文件，evolver 不可修改"
+    if not f.endswith(".py"):
+        return f"失败：file 必须是 .py 文件，收到 {f!r}"
+    # 验证文件存在于 script/ 目录
+    fp = os.path.join(SCRIPT_DIR, f)
+    if not os.path.isfile(fp):
+        return f"失败：文件不存在 script/{f}"
     if not data.get("old") or not data.get("new"):
         return "失败：old/new 不能为空"
     _proposals.append({
@@ -143,7 +145,7 @@ def propose_remove_rule(payload: str) -> str:
 
 @tool("propose_create_tool")
 def propose_create_tool(payload: str) -> str:
-    """新增一个 @tool 函数到 core/tools.py 并登记到工具目录数据库。
+    """新增一个 @tool 函数到 script/tools.py 并登记到工具目录数据库。
     payload 为 JSON：
     {"name": "snake_case_name", "param_name": "arg", "docstring": "...", "body": "Python 函数体源码(不含 def 行，缩进 4 空格)", "catalog_desc": "工具在目录中的描述", "reason": "为何需要"}
     """

@@ -84,7 +84,7 @@ def run_desktop():
     app.setApplicationName("Starfish Agent")
 
     # 设置应用图标
-    icon_path = os.path.join(PKG_DIR, "assets", "icon.png")
+    icon_path = os.path.join(PKG_DIR, "config", "icon.png")
     if os.path.exists(icon_path):
         app_icon = QIcon(icon_path)
         app.setWindowIcon(app_icon)

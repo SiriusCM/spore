@@ -1,9 +1,9 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import {
     Setting, Connection, Aim, User, Tools, Promotion, VideoPause,
-    ArrowDown, ArrowUp, RefreshLeft, Check, Camera, Back,
+    ArrowDown, ArrowUp, RefreshLeft, Check,
 } from '@element-plus/icons-vue'
 import { api } from './api.js'
 import SettingsDialog from './components/SettingsDialog.vue'
@@ -22,8 +22,7 @@ const chatBox = ref(null)
 
 // 控制面板
 const panelExpanded = ref(false)
-const snapshots = ref([])
-const selectedSnap = ref('')
+const latestReportState = ref(null) // preview | applied | failed
 
 // 弹窗显示
 const showSettings = ref(false)
@@ -31,6 +30,8 @@ const showMcp = ref(false)
 const showSkill = ref(false)
 const showAgent = ref(false)
 const showTools = ref(false)
+const showReportDialog = ref(false)
+const currentReportContent = ref('')
 
 function now() { return new Date().toLocaleTimeString() }
 function scrollBottom() {
@@ -68,58 +69,55 @@ async function send() {
 
 function togglePanel() {
     panelExpanded.value = !panelExpanded.value
-    if (panelExpanded.value) loadSnapshots()
 }
 
-async function loadSnapshots() {
+async function loadLatestReportState() {
     try {
-        const d = await api.snapshots()
-        snapshots.value = d.success ? d.snapshots : []
-    } catch { snapshots.value = [] }
+        const d = await api.evolveLatestReport()
+        // 只有当有 preview 状态的报告时才解锁，其他情况都需要重新预览
+        if (d.success && d.report && d.report.state === 'preview') {
+            latestReportState.value = 'preview'
+        } else {
+            latestReportState.value = null // 需要重新预览
+        }
+    } catch {
+        latestReportState.value = null
+    }
+}
+
+async function showReport() {
+    if (latestReportState.value !== 'preview') return
+    try {
+        const d = await api.evolveLatestReport()
+        if (d.success && d.report) {
+            currentReportContent.value = d.report.report_content || '(无内容)'
+            showReportDialog.value = true
+        }
+    } catch { /* ignore */ }
 }
 
 async function doEvolve(apply) {
-    ElMessage.info(apply ? '应用进化中...' : '模拟进化中...')
+    ElMessage.info(apply ? '应用进化中...' : '进化预览中...')
     try {
         const d = await api.evolve(apply)
         if (d.success) {
+            // 插入聊天记录
+            addMsg('system', d.report || '(无提案)')
+
+            // 更新最新报告状态
+            latestReportState.value = d.state
+
             if (apply) {
-                ElMessage.success('进化应用完成')
-                addMsg('system', '✅ 进化应用完成')
+                if (d.state === 'applied') {
+                    ElMessage.success('进化应用成功')
+                } else {
+                    ElMessage.error('进化应用失败，已自动回滚')
+                }
             } else {
-                // 预览：将报告内容作为 AI 回复展示
-                ElMessage.success('模拟进化完成')
-                addMsg('assistant', `## 🧠 进化模拟报告\n\n${d.report || '(无提案)'}`)
+                ElMessage.success('进化预览完成')
             }
         } else ElMessage.error('操作失败')
     } catch (e) { ElMessage.error('请求失败: ' + e.message) }
-}
-
-async function takeSnapshot() {
-    try {
-        const d = await api.takeSnapshot()
-        if (d.success) {
-            ElMessage.success('快照已创建')
-            addMsg('system', '快照: ' + d.snapshot)
-            loadSnapshots()
-        } else ElMessage.error('创建失败')
-    } catch { ElMessage.error('请求失败') }
-}
-
-async function doRollback() {
-    if (!selectedSnap.value) { ElMessage.warning('请先选择快照'); return }
-    try {
-        await ElMessageBox.confirm(`确定回滚到 ${selectedSnap.value}？`, '回滚确认', { type: 'warning' })
-    } catch { return }
-    try {
-        const d = await api.rollback(selectedSnap.value)
-        if (d.success) {
-            ElMessage.success('回滚成功')
-            addMsg('system', d.result)
-            selectedSnap.value = ''
-            loadSnapshots()
-        } else ElMessage.error('回滚失败')
-    } catch { ElMessage.error('请求失败') }
 }
 
 async function loadHistory() {
@@ -129,14 +127,12 @@ async function loadHistory() {
             messages.value = []
             d.history.forEach(h => {
                 if (h.msgType === 'system') {
-                    // 系统消息（进化报告等）
                     messages.value.push({
                         type: 'system',
                         content: h.assistant,
                         time: new Date(h.time).toLocaleTimeString(),
                     })
                 } else {
-                    // 普通对话
                     messages.value.push({
                         type: 'user',
                         content: h.user,
@@ -154,7 +150,11 @@ async function loadHistory() {
     } catch { /* ignore */ }
 }
 
-onMounted(() => { scrollBottom(); loadHistory() })
+onMounted(async () => {
+    scrollBottom()
+    await loadHistory()
+    await loadLatestReportState()
+})
 </script>
 
 <template>
@@ -180,24 +180,30 @@ onMounted(() => { scrollBottom(); loadHistory() })
 
         <div class="control-panel glass" :class="{ expanded: panelExpanded }">
             <div class="control-inner">
-                <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:16px;">
-                    <el-button type="success" :icon="RefreshLeft" @click="doEvolve(false)">模拟进化（不写入）</el-button>
-                    <el-button type="primary" :icon="Check"       @click="doEvolve(true)">应用进化（写入代码）</el-button>
-                    <el-button type="danger"  :icon="Camera"      @click="takeSnapshot">创建快照</el-button>
-                    <el-button type="warning" :icon="Back"        @click="doRollback">回滚到快照</el-button>
+                <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+                    <el-button type="success" :icon="RefreshLeft" @click="doEvolve(false)">进化预览</el-button>
+                    <el-button
+                        type="info"
+                        @click="showReport"
+                        :disabled="latestReportState !== 'preview'"
+                        title="查看预览报告"
+                    >
+                        查看报告
+                    </el-button>
+                    <el-button
+                        type="primary"
+                        :icon="Check"
+                        @click="doEvolve(true)"
+                        :disabled="latestReportState !== 'preview'"
+                        :title="latestReportState === 'preview' ? '应用进化' : '请先执行进化预览'"
+                    >
+                        应用进化
+                    </el-button>
                 </div>
-                <div class="snapshot-section">
-                    <div class="snapshot-label">选择快照后点击回滚</div>
-                    <div class="snapshot-list">
-                        <span v-if="!snapshots.length" style="color:#b2bec3">暂无快照</span>
-                        <div
-                            v-for="s in snapshots"
-                            :key="s"
-                            class="snapshot-item"
-                            :class="{ selected: selectedSnap === s }"
-                            @click="selectedSnap = s"
-                        >{{ s }}</div>
-                    </div>
+                <div v-if="latestReportState" style="text-align:center;margin-top:8px;font-size:12px;color:#636e72;">
+                    <span v-if="latestReportState === 'preview'" style="color:#fdcb6e;">⚠ 有待应用的预览</span>
+                    <span v-else-if="latestReportState === 'applied'" style="color:#00b894;">✓ 已应用</span>
+                    <span v-else-if="latestReportState === 'failed'" style="color:#d63031;">✗ 已失败回滚</span>
                 </div>
             </div>
         </div>
@@ -241,5 +247,10 @@ onMounted(() => { scrollBottom(); loadHistory() })
         <SkillDialog    v-model="showSkill" />
         <AgentDialog    v-model="showAgent" />
         <ToolsDialog    v-model="showTools" />
+
+        <!-- 进化报告弹窗 -->
+        <el-dialog v-model="showReportDialog" title="进化报告" width="600px">
+            <div style="white-space: pre-wrap; font-size: 13px; line-height: 1.6; max-height: 60vh; overflow-y: auto;" v-html="currentReportContent.replace(/\n/g, '<br>')"></div>
+        </el-dialog>
     </div>
 </template>

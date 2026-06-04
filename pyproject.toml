@@ -48,7 +48,7 @@ where = ["."]
 exclude = ["mcp_servers_standalone*", "mcp_servers*", "tests*", "dist*", "build*"]
 
 [tool.setuptools.package-data]
-"*" = ["CONSTITUTION.md", "assets/*", "config/*",
+"*" = ["CONSTITUTION.md", "config/*",
          "view/dist", "view/dist/assets",
          "view/index.html", "view/package.json", "view/vite.config.js",
          "view/src", "view/src/components", "view/src/styles"]
