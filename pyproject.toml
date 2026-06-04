@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "starfish-agent"
-version = "0.2.4"
+version = "0.2.6"
 description = "可自我进化的智能助手"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
 authors = [
-    {name = "Starfish Team"},
+    {name = "gaoliandi", email = "963937371@qq.com"},
 ]
 keywords = ["ai", "agent", "self-evolving", "crewai"]
 classifiers = [
@@ -41,14 +41,10 @@ Homepage = "https://github.com/SiriusCM/starfish"
 starfish = "app:main"
 
 [tool.setuptools]
-py-modules = ["app", "settings", "database"]
+py-modules = ["app", "database", "desktop", "server", "settings"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-exclude = ["mcp_servers_standalone*", "mcp_servers*", "tests*", "dist*", "build*"]
 
 [tool.setuptools.package-data]
-"*" = ["CONSTITUTION.md", "config/*",
-         "view/dist", "view/dist/assets",
-         "view/index.html", "view/package.json", "view/vite.config.js",
-         "view/src", "view/src/components", "view/src/styles"]
+"*" = ["CONSTITUTION.md", "config/*", "view/dist/*", "view/dist/assets/*"]

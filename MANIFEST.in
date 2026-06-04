@@ -1,10 +1,10 @@
+# 包含默认规则漏掉的根目录必要元数据
 include CONSTITUTION.md
-include README.md
-include LICENSE
-include config/icon.png
-include config/env
-recursive-include script *.py
-recursive-include core *.py
-recursive-include evolver *.py
-recursive-include view *
+include requirements.txt
+
+# 包含整个配置文件目录（含隐藏环境文件）
+recursive-include config *
+
+# 完整搬运前端目录，并精准剔除开发依赖（保留编译产物 dist）
+graft view
 prune view/node_modules
