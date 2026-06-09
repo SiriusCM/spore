@@ -1,12 +1,12 @@
 """
 SQLite 数据库统一管理模块。
-所有数据存储在 ~/.starfish/starfish.db
+所有数据存储在 ~/.spore/spore.db
 """
 import os
 import sqlite3
 from settings import DATA_DIR
 
-DB_PATH = os.path.join(DATA_DIR, "starfish.db")
+DB_PATH = os.path.join(DATA_DIR, "spore.db")
 
 
 def get_conn() -> sqlite3.Connection:

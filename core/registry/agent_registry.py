@@ -1,6 +1,6 @@
 """
 智能体注册表 —— 管理多智能体的加载、领域路由、命中统计。
-数据存储在 SQLite（~/.starfish/starfish.db）。
+数据存储在 SQLite（~/.spore/spore.db）。
 
 跟 mcp_registry / skill_registry 同构：CUD 操作会 _bump_version()，
 便于 orchestrator 做缓存失效。

@@ -1,4 +1,4 @@
-# Starfish Agent
+# Spore Agent
 
 可自我进化的智能助手。基于 CrewAI 框架，通过对话学习用户偏好，自动优化自身行为。
 
@@ -12,20 +12,20 @@
 ## 安装
 
 ```bash
-pip3 install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.tuna.tsinghua.edu.cn/simple/ starfish-agent
+pip3 install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.tuna.tsinghua.edu.cn/simple/ spore
 ```
 
 或开发模式：
 
 ```bash
-git clone https://github.com/SiriusCM/starfish.git
-cd starfish
+git clone https://github.com/SiriusCM/spore.git
+cd spore
 pip3 install -e .
 ```
 
 ## 配置
 
-首次运行会在 `~/.starfish/` 下生成 `.env` 配置文件，请填入你的 LLM API Key：
+首次运行会在 `~/.spore/` 下生成 `.env` 配置文件，请填入你的 LLM API Key：
 
 ```bash
 LLM_MODEL=MiniMax-M2.7
@@ -37,19 +37,19 @@ LLM_API_KEY=your-api-key-here
 
 ```bash
 # 启动 Web 界面
-starfish web
+spore web
 
 # 进入控制台对话模式
-starfish cli
+spore cli
 
 # 触发进化预览
-starfish evolve
+spore evolve
 
 # 触发进化并生效
-starfish evolve --apply
+spore evolve --apply
 
 # 查看进化报告列表
-starfish reports
+spore reports
 ```
 
 ## 进化机制
@@ -68,7 +68,7 @@ starfish reports
 ## 项目结构
 
 ```
-starfish/
+spore/
 ├── app.py              # CLI 入口
 ├── server.py           # Flask HTTP 服务
 ├── settings.py         # 配置管理

@@ -157,7 +157,7 @@ def evolve(dry_run: bool = True) -> dict:
     if decision.get("msg"):
         print(f"   说明 : {decision.get('msg')}")
     if dry_run and n > 0:
-        print("👉 确认无误后执行：starfish evolve --apply")
+        print("👉 确认无误后执行：spore evolve --apply")
 
     # 保存报告到数据库
     from database import get_conn

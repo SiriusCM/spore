@@ -3,8 +3,8 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "starfish-agent"
-version = "0.2.6"
+name = "spore"
+version = "0.0.1"
 description = "可自我进化的智能助手"
 readme = "README.md"
 license = {text = "MIT"}
@@ -35,10 +35,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/SiriusCM/starfish"
+Homepage = "https://github.com/SiriusCM/spore"
 
 [project.scripts]
-starfish = "app:main"
+spore = "app:main"
 
 [tool.setuptools]
 py-modules = ["app", "database", "desktop", "server", "settings"]

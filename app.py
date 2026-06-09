@@ -3,15 +3,15 @@ from core.orchestrator import run
 
 
 HELP = (
-    "🌟 Starfish CLI — 可自我进化的智能助手\n"
+    "🌟 spore CLI — 可自我进化的智能助手\n"
     "\n"
     "用法：\n"
-    "  starfish                 启动桌面应用\n"
-    "  starfish cli             进入控制台对话模式\n"
-    "  starfish evolve          触发进化（dry-run 预览，不写盘）\n"
-    "  starfish evolve --apply  触发进化并写盘生效\n"
-    "  starfish reports         查看进化报告列表\n"
-    "  starfish api             启动 Web 界面（浏览器访问）\n"
+    "  spore                 启动桌面应用\n"
+    "  spore cli             进入控制台对话模式\n"
+    "  spore evolve          触发进化（dry-run 预览，不写盘）\n"
+    "  spore evolve --apply  触发进化并写盘生效\n"
+    "  spore reports         查看进化报告列表\n"
+    "  spore api             启动 Web 界面（浏览器访问）\n"
     "\n"
     "对话模式中：\n"
     "  直接输入 → 与 AI 对话\n"

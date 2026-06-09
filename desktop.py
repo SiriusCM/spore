@@ -1,5 +1,5 @@
 """
-Starfish Desktop App - PyQt6 + Flask 一体化应用
+Spore Desktop App - PyQt6 + Flask 一体化应用
 """
 import os
 import sys
@@ -45,10 +45,10 @@ def run_flask_server(host: str = "127.0.0.1", port: int = 8765, signals: ServerS
             signals.error.emit(str(e))
 
 
-class StarfishWindow(QMainWindow):
+class SporeWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Starfish Agent")
+        self.setWindowTitle("Spore Agent")
         self.setGeometry(100, 100, 600, 800)
 
         # 创建 WebView
@@ -72,16 +72,16 @@ class StarfishWindow(QMainWindow):
 
     def on_load_progress(self, progress):
         if progress == 100:
-            self.setWindowTitle("Starfish Agent - 已就绪")
+            self.setWindowTitle("Spore Agent - 已就绪")
         else:
-            self.setWindowTitle(f"Starfish Agent - 加载中 {progress}%")
+            self.setWindowTitle(f"Spore Agent - 加载中 {progress}%")
 
 
 def run_desktop():
     """运行桌面应用"""
     # 创建 Qt 应用
     app = QApplication(sys.argv)
-    app.setApplicationName("Starfish Agent")
+    app.setApplicationName("Spore Agent")
 
     # 设置应用图标
     icon_path = os.path.join(PKG_DIR, "config", "icon.png")
@@ -115,7 +115,7 @@ def run_desktop():
         time.sleep(0.1)
 
     # 创建并显示窗口
-    window = StarfishWindow()
+    window = SporeWindow()
     # 窗口也设置图标（macOS 下 dock 图标需要单独设置）
     if os.path.exists(icon_path):
         window.setWindowIcon(QIcon(icon_path))

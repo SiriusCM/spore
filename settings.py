@@ -6,9 +6,9 @@ from dotenv import load_dotenv
 # PKG_DIR  : 包安装位置（只读，存放代码和默认模板）
 # DATA_DIR : 用户数据目录（可写，存放运行时配置、日志、可进化脚本）
 PKG_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(os.path.expanduser("~"), ".starfish")
+DATA_DIR = os.path.join(os.path.expanduser("~"), ".spore")
 
-# env 加载：用户目录 ~/.starfish/config/env
+# env 加载：用户目录 ~/.spore/config/env
 _user_config_dir = os.path.join(DATA_DIR, "config")
 _user_env = os.path.join(_user_config_dir, "env")
 _pkg_env = os.path.join(PKG_DIR, "config", "env")
@@ -24,7 +24,7 @@ SHELL_BLACKLIST = ["rm -rf /", "sudo rm", "mkfs", ":(){:|:&};:", "shutdown", "re
 MEMORY_ENABLED = True
 MAX_HISTORY = 20
 
-# ── 运行时可写目录（全部在 ~/.starfish/ 下）──────────
+# ── 运行时可写目录（全部在 ~/.spore/ 下）──────────
 SCRIPT_DIR = os.path.join(DATA_DIR, "script")       # prompts.py, tools.py（可被 evolver 修改）
 
 # ── 包内只读目录 ────────────────────────────────────

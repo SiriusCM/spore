@@ -13,7 +13,7 @@ import AgentDialog from './components/AgentDialog.vue'
 import ToolsDialog from './components/ToolsDialog.vue'
 
 const messages = ref([
-    { type: 'assistant', content: '你好！我是 Starfish Agent，随时为你效劳。', time: now() },
+    { type: 'assistant', content: '你好！我是 Spore Agent，随时为你效劳。', time: now() },
 ])
 const userInput = ref('')
 const isSending = ref(false)
@@ -160,7 +160,7 @@ onMounted(async () => {
 <template>
     <div class="app-root">
         <header class="header glass">
-            <h1><span>Starfish</span> Agent</h1>
+            <h1><span>Spore</span> Agent</h1>
             <div class="header-actions">
                 <el-button text circle :icon="Setting"    title="设置"        @click="showSettings = true" />
                 <el-button text circle :icon="Connection" title="MCP 服务端"  @click="showMcp = true" />

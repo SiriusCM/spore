@@ -1,5 +1,5 @@
 """
-Starfish HTTP Server - Flask 入口
+Spore HTTP Server - Flask 入口
 所有 API 路由拆分到 api/ 目录下，api.py 只做应用初始化和蓝图注册。
 """
 import os
