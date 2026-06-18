@@ -8,6 +8,7 @@ from .user_profile import rules_context
 from .registry.agent_registry import list_agents, route, record_hit, current_version as agent_version
 from . import mcp_client
 from .registry import mcp_registry, skill_registry, tool_catalog_registry
+from . import prompts as P  # 直接从 core.prompts 导入
 
 # (mtime, module) cache —— 文件未变则复用已加载模块，避免重复 exec
 _SCRIPT_CACHE: dict = {}
@@ -52,25 +53,20 @@ def _get_llm():
     return _llm
 
 
-def _load_prompts():
-    """加载 prompts.py 并叠加 SQLite 中的工具目录。"""
-    P = _load_script("prompts")
+def _apply_tool_catalog():
+    """将 SQLite 中的工具目录应用到 prompts 模块。"""
     tool_catalog_registry.apply_to_module(P)
-    return P
 
 
 # planner 单例：role/goal/backstory 全来自常量，无需每次重建
-_planner_cache: dict = {}  # {"mtime": float, "tc_ver": float, "agent": Agent}
+_planner_cache: dict = {}  # {"tc_ver": float, "agent": Agent}
 
 
 def _get_planner() -> Agent:
-    P = _load_prompts()
-    mtime = _script_mtime("prompts")
+    _apply_tool_catalog()
     tc_ver = tool_catalog_registry.current_version()
     cached = _planner_cache.get("agent")
-    if (cached is not None
-            and _planner_cache.get("mtime") == mtime
-            and _planner_cache.get("tc_ver") == tc_ver):
+    if cached is not None and _planner_cache.get("tc_ver") == tc_ver:
         return cached
     agent = Agent(
         role=P.PLANNER_ROLE,
@@ -83,7 +79,6 @@ def _get_planner() -> Agent:
         llm=_get_llm(),
     )
     _planner_cache["agent"] = agent
-    _planner_cache["mtime"] = mtime
     _planner_cache["tc_ver"] = tc_ver
     return agent
 
@@ -202,7 +197,7 @@ def _resolve_skill_content(plan_result: str, agent_id: str) -> tuple[str, list[s
 
 
 def run(user_input: str) -> str:
-    P = _load_prompts()
+    _apply_tool_catalog()
     ctx = history_context()
     global_rules = rules_context()
     agent_list = _build_agent_list()
